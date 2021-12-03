@@ -1,15 +1,34 @@
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
  
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+
 public class FileReceiveServer {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ServerSocket serverSocket = null;
         Socket socket = null;
+
+        // 비밀키 생성
+		KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+		keyGenerator.init(128);
+		SecretKey secretKey = keyGenerator.generateKey();
+		String transformation = "AES/ECB/PKCS5Padding";
+
+        File encryptFile = new File("encrypt.txt");
+		File decryptFile = new File("decrypt.txt");
  
         try {
             // 리스너 소켓 생성 후 대기
@@ -26,7 +45,27 @@ public class FileReceiveServer {
         } catch (IOException e) {
             e.printStackTrace();
         }
- 
+        
+        // 파일 복호화
+		{
+			Cipher cipher = Cipher.getInstance(transformation);
+			cipher.init(Cipher.DECRYPT_MODE, secretKey);
+			InputStream input = null;
+			OutputStream output = null;
+			try {
+				input = new CipherInputStream(new BufferedInputStream(new FileInputStream(encryptFile)), cipher);
+				output = new BufferedOutputStream(new
+				FileOutputStream(decryptFile));
+				int read = 0;
+				byte[] buffer = new byte[1024];
+				while ((read = input.read(buffer)) != -1) {
+					output.write(buffer, 0, read);
+				}
+			} finally {
+				if (output != null) try {output.close();} catch(IOException ie) {}
+				if (input != null) try {input.close();} catch(IOException ie) {}
+			}
+		}
     }
 }
  

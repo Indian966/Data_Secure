@@ -42,13 +42,11 @@ public class FileSendClient {
 			OutputStream output = null;
 			try {
 				input = new BufferedInputStream(new FileInputStream(plainFile));
-                System.out.println(input);
 				output = new CipherOutputStream(new BufferedOutputStream(new FileOutputStream(encryptFile)), cipher);
 				int read = 0;
 				byte[] buffer = new byte[1024];
 				while ((read = input.read(buffer)) != -1) {
 					output.write(buffer, 0, read);
-                    System.out.println(output);
 				}
 			} finally {
 				if (output != null) try {output.close();} catch(IOException ie) {}
