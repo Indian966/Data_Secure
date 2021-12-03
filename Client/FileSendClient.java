@@ -6,10 +6,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
  
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.BufferedOutputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
@@ -27,9 +30,32 @@ public class FileSendClient {
 		keyGenerator.init(128);
 		SecretKey secretKey = keyGenerator.generateKey();
 		String transformation = "AES/ECB/PKCS5Padding";
-		File plainFile = dos.writeUTF(fName)
+
+		File plainFile = new File("plain.txt");
 		File encryptFile = new File("encrypt_a.txt");
- 
+        
+        // 파일 암호화
+		{
+			Cipher cipher = Cipher.getInstance(transformation);
+			cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+			InputStream input = null;
+			OutputStream output = null;
+			try {
+				input = new BufferedInputStream(new FileInputStream(plainFile));
+                System.out.println(input);
+				output = new CipherOutputStream(new BufferedOutputStream(new FileOutputStream(encryptFile)), cipher);
+				int read = 0;
+				byte[] buffer = new byte[1024];
+				while ((read = input.read(buffer)) != -1) {
+					output.write(buffer, 0, read);
+                    System.out.println(output);
+				}
+			} finally {
+				if (output != null) try {output.close();} catch(IOException ie) {}
+				if (input != null) try {input.close();} catch(IOException ie) {}
+			}
+		}
+
         try {
             // 서버 연결
             socket = new Socket(serverIp, 7777);
@@ -41,25 +67,6 @@ public class FileSendClient {
             e.printStackTrace();
         }
 
-        // 파일 암호화
-		{
-			Cipher cipher = Cipher.getInstance(transformation);
-			cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-			InputStream input = null;
-			OutputStream output = null;
-			try {
-				input = new BufferedInputStream(new FileInputStream(plainFile));
-				output = new CipherOutputStream(new BufferedOutputStream(new FileOutputStream(encryptFile)), cipher);
-				int read = 0;
-				byte[] buffer = new byte[1024];
-				while ((read = input.read(buffer)) != -1) {
-					output.write(buffer, 0, read);
-				}
-			} finally {
-				if (output != null) try {output.close();} catch(IOException ie) {}
-				if (input != null) try {input.close();} catch(IOException ie) {}
-			}
-		}
     }
 }
  
